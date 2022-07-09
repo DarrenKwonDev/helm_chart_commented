@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # Release 앞의 점은 해당 스코프의 최상위 네임스페이스부터 시작한다는 것을 나타낸다.
+  # .Release.Name는 최상위 네임스페이스에서부터 시작하여(.) Release 객체를 찾은 다음 (.Release) Name이라는 객체를 찾아보라 (.Release.Name)로 읽을 수 있다.
+  name: {{ .Release.Name }}-config # helm install clunky-serval ./mychart -> clunky-serval-config
+  # mychart.labels 이란 이름의 template을 적용
+  # template을 써도 되고, include를 써도 되지만 indenting이 더 나아진다는 이유로 include가 preferable하다고 한다.
+  # {{- include "mychart.labels" . }} # mychart.labels 템플릿에게 .(최상위 네임스페이스 전부) 스코프를 넘겨줌으로써 .Chart, .Release와 같은 값을 사용할 수 있게 함
+data:
+  myvalue: "Hello World" # 하드 코딩은 권장되지 않음. 하지마~
+  drink: {{ .Values.favorite.drink }} # values.yaml의 값
+  food: {{ quote .Values.favorite.food }} # quote 함수(stringify)에 .Values.favorite.food를 적용하라. (func arg1 arg2 ...)
+  moive: {{ .Values.favorite.movie | upper | repeat 2 }} # pipeline도 가능. helm에서 invert된 순서로 적는게 컨벤션이라 파이프 라인이 더 권장되는 편
+  # 없으면 default 쓰면 되지만 static한 값은 다 values.yaml에 있다고 가정하기 때문에 좋지 않다고 함. default가 용인될 때는 computed value가 필요할 때임
+  # 빈 값에 대한 guard를 원하면 if 조건절을 활용하라는 공식 문서의 내용이 있음. default는 제한적으로 사용하자
+  author: {{ .Values.author | default "Dostoevsky" | quote }} 
+  {{- if eq .Values.favorite.food "pizza" }} # template engine이 이 줄을 제거하여 공백으로 만듦. 이 공백까지도 제거하기 위해 chomping modifier를 사용
+  cutter: "true" # if절 내부가 아닌 본래 yaml 절의 indenting을 지켜야 함
+  {{- end }}
+  # variable
+  {{- $releaseName := .Release.Name  }}
+  # with scoping
+  {{- with .Values }}
+  music: {{ .favorite.music }}
+  show: {{ .favorite.show }}
+  release: {{ $releaseName }} # 변수 사용하여 scope 밖의 값 출력 가능
+  {{- end }}
+  # range looping
+  # |- 는 multi-line string을 선언하는데 사용
+  sizes: |-
+    {{- range tuple "smal" "medium" "large" }}
+    - {{ . | quote }}
+    {{- end }}
+  # go template이라서 walus operator를 사용하며 slice 문법 그대로 사용함.
+  toppings: |- 
+    {{- range $i, $v := .Values.favorite.toppings }}
+    - {{ $i }} {{ $v }}
+    {{- end }}
+    {{- range $key, $val := .Values.favorite }}
+    - {{ $key }} {{ $val | quote }}
+    {{- end }}
