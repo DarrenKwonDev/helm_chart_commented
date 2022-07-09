@@ -6,7 +6,7 @@ metadata:
   name: {{ .Release.Name }}-config # helm install clunky-serval ./mychart -> clunky-serval-config
   # mychart.labels 이란 이름의 template을 적용
   # template을 써도 되고, include를 써도 되지만 indenting이 더 나아진다는 이유로 include가 preferable하다고 한다.
-  # {{- include "mychart.labels" . }} # mychart.labels 템플릿에게 .(최상위 네임스페이스 전부) 스코프를 넘겨줌으로써 .Chart, .Release와 같은 값을 사용할 수 있게 함
+  {{- include "mychart.labels" . }} # mychart.labels 템플릿에게 .(최상위 네임스페이스 전부) 스코프를 넘겨줌으로써 .Chart, .Release와 같은 값을 사용할 수 있게 함
 data:
   myvalue: "Hello World" # 하드 코딩은 권장되지 않음. 하지마~
   drink: {{ .Values.favorite.drink }} # values.yaml의 값
